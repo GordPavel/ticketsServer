@@ -27,10 +27,19 @@
             <version>${jaxb.version}</version>
         </dependency>
 
-
+        <!-- https://mvnrepository.com/artifact/com.googlecode.clichemaven/cliche -->
+        <dependency>
+            <groupId>com.googlecode.clichemaven</groupId>
+            <artifactId>cliche</artifactId>
+            <version>110413</version>
+        </dependency>
     </dependencies>
+
     <properties>
         <jaxb.version>2.3.0</jaxb.version>
+        <java.source.version>1.9</java.source.version>
+        <java.target.version>1.8</java.target.version>
+        <jline.version>3.5.1</jline.version>
     </properties>
 
     <build>
@@ -40,8 +49,8 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>2.3.2</version>
                 <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
+                    <source>${java.target.version}</source>
+                    <target>${java.target.version}</target>
                 </configuration>
             </plugin>
         </plugins>

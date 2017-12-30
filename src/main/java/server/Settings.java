@@ -11,10 +11,11 @@ import java.util.stream.Collectors;
 public class Settings implements Cloneable{
     private String adminName;
     private String rootPassword;
+    private Long   cacheTimeout;
     private List<Base> base = new ArrayList<>();
 
 
-    String getAdminName(){
+    public String getAdminName(){
         return adminName;
     }
 
@@ -23,7 +24,7 @@ public class Settings implements Cloneable{
         this.adminName = adminName;
     }
 
-    String getRootPassword(){
+    public String getRootPassword(){
         return rootPassword;
     }
 
@@ -82,5 +83,14 @@ public class Settings implements Cloneable{
             }
         } ).collect( Collectors.toList() );
         return clone;
+    }
+
+    public Long getCacheTimeout(){
+        return cacheTimeout;
+    }
+
+    @XmlElement
+    void setCacheTimeout( Long cacheTimeout ){
+        this.cacheTimeout = cacheTimeout;
     }
 }

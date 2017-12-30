@@ -1,5 +1,6 @@
 package server;
 
+
 import server.serverexceptions.CopyBase;
 import server.serverexceptions.CopyUser;
 import server.serverexceptions.IllegalBasePath;
@@ -14,7 +15,7 @@ import java.net.URISyntaxException;
 import java.util.Optional;
 import java.util.function.Predicate;
 
-public class SettingsLoader{
+public class SettingsManager{
 
     static         Settings    settings;
     private static JAXBContext jaxbContext;
@@ -31,11 +32,12 @@ public class SettingsLoader{
     public static Settings loadSettings(){
         if( settings == null ){
             try( InputStream inputStream = new FileInputStream(
-                    new File( SettingsLoader.class.getProtectionDomain().getCodeSource().getLocation().toURI() ) +
-                    "/serverfiles/settings.xml" ) ){
+                    new File( SettingsManager.class.getProtectionDomain().getCodeSource().getLocation().toURI() )
+                            .getParent() + "/serverfiles/settings.xml" ) ){
                 Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();
                 settings = ( Settings ) jaxbUnmarshaller.unmarshal( inputStream );
             }catch( JAXBException | IOException | URISyntaxException e ){
+//                todo : Ошибки в файле настроек
                 e.printStackTrace();
             }
         }
@@ -44,7 +46,7 @@ public class SettingsLoader{
 
     public static void saveSettings(){
         try( OutputStream outputStream = new FileOutputStream(
-                new File( SettingsLoader.class.getProtectionDomain().getCodeSource().getLocation().toURI() )
+                new File( SettingsManager.class.getProtectionDomain().getCodeSource().getLocation().toURI() )
                         .getParent() + "/serverfiles/settings.xml" ) ){
             Marshaller jaxbMarshaller = jaxbContext.createMarshaller();
             // output pretty printed
@@ -62,6 +64,11 @@ public class SettingsLoader{
 
     public static void setAdminPassword( String password ){
         settings.setRootPassword( password );
+        saveSettings();
+    }
+
+    public static void setCacheTimeout( Long timeout ){
+        settings.setCacheTimeout( timeout );
         saveSettings();
     }
 

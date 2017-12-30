@@ -36,9 +36,9 @@ class SettingsLoaderTest{
 
     @Test
     void xmlRepresentation() throws CloneNotSupportedException{
-        SettingsLoader.settings = settings;
-        SettingsLoader.saveSettings();
-        Settings copy = ( Settings ) SettingsLoader.settings.clone();
-        assertEquals( copy , SettingsLoader.loadSettings() , "Equal settings" );
+        SettingsManager.settings = settings;
+        SettingsManager.saveSettings();
+        Settings copy = ( Settings ) SettingsManager.settings.clone();
+        assertEquals( copy , SettingsManager.loadSettings() , "Equal settings" );
     }
 }
