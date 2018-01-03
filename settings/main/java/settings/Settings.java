@@ -1,4 +1,4 @@
-package server;
+package settings;
 
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @XmlRootElement
 public class Settings implements Cloneable{
@@ -33,8 +34,13 @@ public class Settings implements Cloneable{
         this.rootPassword = rootPassword;
     }
 
-    List<Base> getBase(){
+    public List<Base> getBase(){
         return base;
+    }
+
+    public Stream<String> listBases(){
+        return base.stream()
+                   .map( base1 -> String.format( "%s %-7s\n" , base1.getPath() , base1.isRunning() ? "running" : "" ) );
     }
 
     @XmlElement

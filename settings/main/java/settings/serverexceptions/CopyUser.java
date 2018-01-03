@@ -1,4 +1,4 @@
-package server.serverexceptions;
+package settings.serverexceptions;
 
 public class CopyUser extends IllegalArgumentException{
     /**

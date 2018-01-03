@@ -1,10 +1,10 @@
-package server;
+package settings;
 
 
-import server.serverexceptions.CopyBase;
-import server.serverexceptions.CopyUser;
-import server.serverexceptions.IllegalBasePath;
-import server.serverexceptions.StartStopBaseException;
+import settings.serverexceptions.CopyBase;
+import settings.serverexceptions.CopyUser;
+import settings.serverexceptions.IllegalBasePath;
+import settings.serverexceptions.StartStopBaseException;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
@@ -17,26 +17,34 @@ import java.util.function.Predicate;
 
 public class SettingsManager{
 
-    static         Settings    settings;
+    public static  Settings    settings;
     private static JAXBContext jaxbContext;
+    private static String      settingsFilePath;
 
     static{
+        try{
+            settingsFilePath =
+                    new File( SettingsManager.class.getProtectionDomain().getCodeSource().getLocation().toURI() )
+                            .getParent() + "/serverfiles/settings.xml";
+        }catch( URISyntaxException e ){
+            e.printStackTrace();
+            System.exit( 1 );
+        }
         try{
             jaxbContext = JAXBContext.newInstance( Settings.class , Base.class , User.class );
         }catch( JAXBException e ){
             e.printStackTrace();
+            System.exit( 1 );
         }
         settings = loadSettings();
     }
 
     public static Settings loadSettings(){
         if( settings == null ){
-            try( InputStream inputStream = new FileInputStream(
-                    new File( SettingsManager.class.getProtectionDomain().getCodeSource().getLocation().toURI() )
-                            .getParent() + "/serverfiles/settings.xml" ) ){
+            try( InputStream inputStream = new FileInputStream( settingsFilePath ) ){
                 Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();
                 settings = ( Settings ) jaxbUnmarshaller.unmarshal( inputStream );
-            }catch( JAXBException | IOException | URISyntaxException e ){
+            }catch( JAXBException | IOException e ){
 //                todo : Ошибки в файле настроек
                 e.printStackTrace();
             }
@@ -45,14 +53,12 @@ public class SettingsManager{
     }
 
     public static void saveSettings(){
-        try( OutputStream outputStream = new FileOutputStream(
-                new File( SettingsManager.class.getProtectionDomain().getCodeSource().getLocation().toURI() )
-                        .getParent() + "/serverfiles/settings.xml" ) ){
+        try( OutputStream outputStream = new FileOutputStream( settingsFilePath ) ){
             Marshaller jaxbMarshaller = jaxbContext.createMarshaller();
             // output pretty printed
             jaxbMarshaller.setProperty( Marshaller.JAXB_FORMATTED_OUTPUT , true );
             jaxbMarshaller.marshal( settings , outputStream );
-        }catch( JAXBException | IOException | URISyntaxException e ){
+        }catch( JAXBException | IOException e ){
             e.printStackTrace();
         }
     }
@@ -72,6 +78,10 @@ public class SettingsManager{
         saveSettings();
     }
 
+    public static Optional<Base> getBase( String path ){
+        return settings.getBase().stream().filter( base -> base.getPath().equals( path ) ).findAny();
+    }
+
     public static void addNewBase( String path ){
         if( settings.getBase().stream().noneMatch( getBaseEqualByPathPredicate( path ) ) ){
             Base base = new Base( path );
@@ -83,7 +93,7 @@ public class SettingsManager{
         }
     }
 
-    public static void removeBase( String path ){
+    public static void deleteBase( String path ){
         settings.getBase().removeIf( getBaseEqualByPathPredicate( path ) );
         saveSettings();
     }
@@ -133,6 +143,62 @@ public class SettingsManager{
                 saveSettings();
             }else{
                 throw new CopyUser( "Base " + basePath + " doesn't have this client " + clientName );
+            }
+        }else{
+            throw new IllegalBasePath( "Server doesn't contain this base " + basePath );
+        }
+    }
+
+    public static void changeClientName( String basePath , String oldName , String newName ){
+        Optional<Base> optionalBase =
+                settings.getBase().stream().filter( getBaseEqualByPathPredicate( basePath ) ).findFirst();
+        if( optionalBase.isPresent() ){
+            Base editingBase = optionalBase.get();
+            Optional<User> optionalUser =
+                    editingBase.getUser().stream().filter( getUserEqualByNamePredicate( oldName ) ).findFirst();
+            if( optionalUser.isPresent() ){
+                optionalUser.get().setName( newName );
+                saveSettings();
+            }else{
+                throw new CopyUser( "Base " + basePath + " doesn't have this client " + oldName );
+            }
+        }else{
+            throw new IllegalBasePath( "Server doesn't contain this base " + basePath );
+        }
+    }
+
+    public static void changeClientPassword( String basePath , String userName , String newPassword ){
+        Optional<Base> optionalBase =
+                settings.getBase().stream().filter( getBaseEqualByPathPredicate( basePath ) ).findFirst();
+        if( optionalBase.isPresent() ){
+            Base editingBase = optionalBase.get();
+            Optional<User> optionalUser =
+                    editingBase.getUser().stream().filter( getUserEqualByNamePredicate( userName ) ).findFirst();
+            if( optionalUser.isPresent() ){
+                optionalUser.get().setPassword( newPassword );
+                saveSettings();
+            }else{
+                throw new CopyUser( "Base " + basePath + " doesn't have this client " + userName );
+            }
+        }else{
+            throw new IllegalBasePath( "Server doesn't contain this base " + basePath );
+        }
+    }
+
+    public static void changeClientPrivilege( String basePath , String userName ){
+        Optional<Base> optionalBase =
+                settings.getBase().stream().filter( getBaseEqualByPathPredicate( basePath ) ).findFirst();
+        if( optionalBase.isPresent() ){
+            Base editingBase = optionalBase.get();
+            Optional<User> optionalUser =
+                    editingBase.getUser().stream().filter( getUserEqualByNamePredicate( userName ) ).findFirst();
+            if( optionalUser.isPresent() ){
+                User user = optionalUser.get();
+                user.setPrivilege(
+                        user.getPrivilege() == UserPrivileges.Read ? UserPrivileges.ReadWrite : UserPrivileges.Read );
+                saveSettings();
+            }else{
+                throw new CopyUser( "Base " + basePath + " doesn't have this client " + userName );
             }
         }else{
             throw new IllegalBasePath( "Server doesn't contain this base " + basePath );

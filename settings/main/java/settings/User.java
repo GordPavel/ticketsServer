@@ -1,4 +1,4 @@
-package server;
+package settings;
 
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
