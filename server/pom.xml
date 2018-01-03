@@ -6,17 +6,18 @@
 
     <parent>
         <groupId>ru.netCracker</groupId>
-        <artifactId>ticketsSystemServer</artifactId>
+        <artifactId>ticketsServer</artifactId>
         <version>0.0.1-SNAPSHOT</version>
     </parent>
 
     <artifactId>server</artifactId>
+    <!--todo:Версия-->
     <version>0.0.1-SNAPSHOT</version>
 
     <dependencies>
         <dependency>
             <groupId>ru.netCracker</groupId>
-            <artifactId>ticketsSystemServer</artifactId>
+            <artifactId>ticketsServer</artifactId>
             <version>0.0.1-SNAPSHOT</version>
         </dependency>
         <dependency>

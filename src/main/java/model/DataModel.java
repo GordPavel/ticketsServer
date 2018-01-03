@@ -24,14 +24,9 @@ public class DataModel{
     private CopyOnWriteArrayList<Flight> flights = new CopyOnWriteArrayList<>();
     private CopyOnWriteArrayList<Route>  routes  = new CopyOnWriteArrayList<>();
 
-    public DataModel( File base ){
+    public DataModel( File base ) throws IOException{
         this.base = base;
-        try{
-            importFromFile( base );
-        }catch( IOException e ){
-//            todo : Загрузка данных
-            e.printStackTrace();
-        }
+        importFromFile( base );
     }
 
     /**
@@ -81,7 +76,7 @@ public class DataModel{
      <p>
      duplicates number
      */
-    public void addFlight( Flight flight ) throws FlightAndRouteException{
+    public void addFlight( Flight flight ) throws FlightAndRouteException, IOException{
         if( !( legalSymbolsChecker.matcher( flight.getNumber() ).matches() &&
                legalSymbolsChecker.matcher( flight.getPlaneID() ).matches() ) ){
             throw new FaRUnacceptableSymbolException( "Flights has illegal symbols" );
@@ -104,12 +99,7 @@ public class DataModel{
             throw new FaRSameNameException( "Flight duplicates someone from database" );
         }
         flights.addIfAbsent( flight );
-        try{
-            saveToFile( base );
-        }catch( IOException e ){
-//            todo : Сохранение данных
-            e.printStackTrace();
-        }
+        saveToFile( base );
     }
 
 
@@ -118,15 +108,10 @@ public class DataModel{
 
      @param number number of flight to be removed
      */
-    public void removeFlight( String number ){
+    public void removeFlight( String number ) throws IOException{
         flights.removeIf( flight -> Pattern.compile( number , Pattern.CASE_INSENSITIVE ).matcher( flight.getNumber() )
                                            .matches() );
-        try{
-            saveToFile( base );
-        }catch( IOException e ){
-//            todo : Сохранение данных
-            e.printStackTrace();
-        }
+        saveToFile( base );
     }
 
     /**
@@ -144,7 +129,7 @@ public class DataModel{
      @throws FaRSameNameException     it duplicates in ( planeID && route && arrive date && departure date ).
      */
     public void editFlight( Flight flight , Route newRoute , String newPlaneId , Date newDepartureDate ,
-                            Date newArriveDate ) throws FlightAndRouteException{
+                            Date newArriveDate ) throws FlightAndRouteException, IOException{
         if( !legalSymbolsChecker.matcher( newPlaneId != null ? newPlaneId : flight.getPlaneID() ).matches() ){
             throw new FaRUnacceptableSymbolException( "Flights has illegal symbols" );
         }
@@ -177,12 +162,7 @@ public class DataModel{
         editingFlight.setRoute( newRoute != null ? newRoute : flight.getRoute() );
         editingFlight.setDepartureDate( newDepartureDate != null ? newDepartureDate : flight.getDepartureDate() );
         editingFlight.setArriveDate( newArriveDate != null ? newArriveDate : flight.getArriveDate() );
-        try{
-            saveToFile( base );
-        }catch( IOException e ){
-//            todo : Сохранение данных
-            e.printStackTrace();
-        }
+        saveToFile( base );
     }
 
 
@@ -204,7 +184,7 @@ public class DataModel{
      @throws IllegalArgumentException       if departure and destination airports are similar
      @throws FaRUnacceptableSymbolException if airports name contain illegal symbols
      */
-    public void addRoute( Route route ){
+    public void addRoute( Route route ) throws IOException{
         if( route.getFrom().toUpperCase().equals( route.getTo().toUpperCase() ) ){
             throw new FaRSameNameException( "Departure and destination airports are similar" );
         }
@@ -219,12 +199,7 @@ public class DataModel{
         }
         route.setId( routesPrimaryKeysGenerator.next() );
         routes.addIfAbsent( route );
-        try{
-            saveToFile( base );
-        }catch( IOException e ){
-//            todo : Сохранение данных
-            e.printStackTrace();
-        }
+        saveToFile( base );
     }
 
     private Iterator<Integer> routesPrimaryKeysGenerator = IntStream.rangeClosed( 1 , Integer.MAX_VALUE ).iterator();
@@ -234,15 +209,10 @@ public class DataModel{
 
      @param route to remove
      */
-    public void removeRoute( Route route ){
+    public void removeRoute( Route route ) throws IOException{
         flights.removeIf( flight -> Objects.equals( flight.getRoute().getId() , route.getId() ) );
         routes.remove( route );
-        try{
-            saveToFile( base );
-        }catch( IOException e ){
-//            todo : Сохранение данных
-            e.printStackTrace();
-        }
+        saveToFile( base );
     }
 
     /**
@@ -255,7 +225,7 @@ public class DataModel{
      @throws FaRIllegalEditedData if database doesn't contain previous version of route
      @throws FaRSameNameException it duplicates someone another or same airports
      */
-    public void editRoute( Route route , String newDepartureAirport , String newDestinationAirport ){
+    public void editRoute( Route route , String newDepartureAirport , String newDestinationAirport ) throws IOException{
         if( ( newDepartureAirport != null ? newDepartureAirport : route.getFrom() )
                 .equals( newDestinationAirport != null ? newDestinationAirport : route.getTo() ) ){
             throw new FaRSameNameException( "Same airports" );
@@ -277,12 +247,7 @@ public class DataModel{
         }
         editingRoute.setFrom( newDepartureAirport != null ? newDepartureAirport : route.getFrom() );
         editingRoute.setTo( newDestinationAirport != null ? newDestinationAirport : route.getTo() );
-        try{
-            saveToFile( base );
-        }catch( IOException e ){
-//            todo : Сохранение данных
-            e.printStackTrace();
-        }
+        saveToFile( base );
     }
 
     /**
@@ -301,7 +266,7 @@ public class DataModel{
         if( !routesAndFlights.values().parallelStream().flatMap( Collection::stream ).allMatch(
                 serializable -> serializable.getClass().equals( Route.class ) ||
                                 serializable.getClass().equals( Flight.class ) ) ){
-            throw new IllegalArgumentException( "One object neither Route, nor Flight class" );
+            throw new FaRIllegalDataException( "One object neither Route, nor Flight class" );
         }
         List<Route> routes =
                 routesAndFlights.get( true ).parallelStream().map( Route.class::cast ).collect( Collectors.toList() );

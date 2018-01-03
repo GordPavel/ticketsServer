@@ -12,10 +12,17 @@ import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
 import java.io.*;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Optional;
+import java.util.Scanner;
 import java.util.function.Predicate;
 
 public class SettingsManager{
+    private final static String defaultSettingsFileString =
+            "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<settings/>";
 
     public static  Settings    settings;
     private static JAXBContext jaxbContext;
@@ -40,14 +47,38 @@ public class SettingsManager{
     }
 
     public static Settings loadSettings(){
-        if( settings == null ){
-            try( InputStream inputStream = new FileInputStream( settingsFilePath ) ){
-                Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();
-                settings = ( Settings ) jaxbUnmarshaller.unmarshal( inputStream );
-            }catch( JAXBException | IOException e ){
-//                todo : Ошибки в файле настроек
+        if( !Files.exists( Paths.get( settingsFilePath ) ) ){
+            Path filePath = Paths.get( settingsFilePath );
+            try{
+                Files.createFile( filePath );
+                Files.write( filePath , defaultSettingsFileString.getBytes( StandardCharsets.UTF_8 ) );
+            }catch( IOException e ){
                 e.printStackTrace();
             }
+        }
+        try( InputStream inputStream = new FileInputStream( settingsFilePath ) ){
+            Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();
+            settings = ( Settings ) jaxbUnmarshaller.unmarshal( inputStream );
+        }catch( JAXBException e ){
+            System.out.println(
+                    "Your settings.xml file is damaged. Do you want to delete it and restart program? [y/n]" +
+                    "All your settings'll be lost." );
+            Scanner scanner = new Scanner( System.in );
+            String  answer;
+            while( !( answer = scanner.next() ).matches( "[yn]" ) ){
+                System.out.println( "Type y - yes, delete file; or n - no, not delete." );
+            }
+            if( answer.equals( "y" ) ){
+                try{
+                    Files.delete( Paths.get( settingsFilePath ) );
+                }catch( IOException e1 ){
+                    e1.printStackTrace();
+                }
+            }
+            System.exit( 1 );
+        }catch( IOException e ){
+            e.printStackTrace();
+            System.exit( 1 );
         }
         return settings;
     }
@@ -55,7 +86,6 @@ public class SettingsManager{
     public static void saveSettings(){
         try( OutputStream outputStream = new FileOutputStream( settingsFilePath ) ){
             Marshaller jaxbMarshaller = jaxbContext.createMarshaller();
-            // output pretty printed
             jaxbMarshaller.setProperty( Marshaller.JAXB_FORMATTED_OUTPUT , true );
             jaxbMarshaller.marshal( settings , outputStream );
         }catch( JAXBException | IOException e ){
